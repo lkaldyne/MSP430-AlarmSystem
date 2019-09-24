@@ -19,20 +19,22 @@ typedef struct
     char cHours[2];
 } timer;
 
+timer alarmTimer;
+
+int alarmActive = 0;
+
 int decrement_timer(timer *alarmTimer);
 
 void main(void)
 {
     int magnetState = 0; //Current button press state (to allow edge detection)
     int led_state = 0;
-    timer alarmTimer;
-    alarmTimer.cHours[0] = '1';
+    /*alarmTimer.cHours[0] = '1';
     alarmTimer.cHours[1] = '1';
     alarmTimer.cMinutes[0] = '0';
     alarmTimer.cMinutes[1] = '0';
     alarmTimer.cSeconds[0] = '0';
-    alarmTimer.cSeconds[1] = '0';
-    int alarmActive = 1;
+    alarmTimer.cSeconds[1] = '0';*/
     int counter = 0;
 
     /*
@@ -283,6 +285,8 @@ void Init_UART(void)
     EUSCI_A_UART_enableInterrupt(EUSCI_A0_BASE, EUSCI_A_UART_RECEIVE_INTERRUPT);
 }
 
+unsigned int timerCounter = 0;
+
 /* EUSCI A0 UART ISR - Echoes data back to PC host */
 #pragma vector=USCI_A0_VECTOR
 __interrupt
@@ -294,7 +298,43 @@ void EUSCIA0_ISR(void)
 
     if (RxStatus)
     {
-        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, EUSCI_A_UART_receiveData(EUSCI_A0_BASE));
+        /*alarmTimer.cHours[0] = '1';
+        alarmTimer.cHours[1] = '1';
+        alarmTimer.cMinutes[0] = '0';
+        alarmTimer.cMinutes[1] = '0';
+        alarmTimer.cSeconds[0] = '0';
+        alarmTimer.cSeconds[1] = '0';*/
+
+        uint8_t value = EUSCI_A_UART_receiveData(EUSCI_A0_BASE);
+
+        if(((char)value >= '0' && (char)value <= '9') && timerCounter < 2){
+            alarmTimer.cHours[timerCounter] = (char)value;
+            timerCounter++;
+        }
+        if((char)value == 'h' && timerCounter == 2){
+            timerCounter++;
+        }
+
+        if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 2 && timerCounter < 5)){
+            alarmTimer.cMinutes[timerCounter - 3] = (char)value;
+            timerCounter++;
+        }
+        if((char)value == 'm' && timerCounter == 5){
+            timerCounter++;
+        }
+
+        if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 5 && timerCounter < 8)){
+            alarmTimer.cMinutes[timerCounter-5] = (char)value;
+            timerCounter++;
+        }
+        if((char)value == 's' && timerCounter == 8){
+            timerCounter++;
+        }
+
+        if(timerCounter == 9)
+            alarmActive = 1;
+
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, value);
     }
 }
 
