@@ -324,7 +324,7 @@ void EUSCIA0_ISR(void)
         }
 
         if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 5 && timerCounter < 8)){
-            alarmTimer.cMinutes[timerCounter-5] = (char)value;
+            alarmTimer.cSeconds[timerCounter-6] = (char)value;
             timerCounter++;
         }
         if((char)value == 's' && timerCounter == 8){
