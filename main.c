@@ -74,7 +74,7 @@ void main(void)
     //All done initializations - turn interrupts back on.
     __enable_interrupt();
 
-    displayScrollText("THOTTIES");
+    displayScrollText("GRP 11 DEMO");
 
     while(1) //Do this when you want an infinite loop of code
     {
