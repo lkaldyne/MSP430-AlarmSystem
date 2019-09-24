@@ -9,11 +9,31 @@
 
 char ADCState = 0; //Busy state of the ADC
 int16_t ADCResult = 0; //Storage for the ADC conversion result
+typedef struct
+{
+    int hours;
+    int minutes;
+    int seconds;
+    char cSeconds[2];
+    char cMinutes[2];
+    char cHours[2];
+} timer;
+
+int decrement_timer(timer *alarmTimer);
 
 void main(void)
 {
     int magnetState = 0; //Current button press state (to allow edge detection)
     int led_state = 0;
+    timer alarmTimer;
+    alarmTimer.cHours[0] = '1';
+    alarmTimer.cHours[1] = '1';
+    alarmTimer.cMinutes[0] = '0';
+    alarmTimer.cMinutes[1] = '0';
+    alarmTimer.cSeconds[0] = '0';
+    alarmTimer.cSeconds[1] = '0';
+    int alarmActive = 1;
+    int counter = 0;
 
     /*
      * Functions with two underscores in front are called compiler intrinsics.
@@ -23,6 +43,7 @@ void main(void)
      * v18.12.0.LTS" and search for the word "intrinsic" if you want to know
      * more.
      * */
+
 
     //Turn off interrupts during initialization
     __disable_interrupt();
@@ -55,6 +76,17 @@ void main(void)
 
     while(1) //Do this when you want an infinite loop of code
     {
+        if (counter++ >= 550 && alarmActive) {
+            alarmActive = decrement_timer(&alarmTimer);
+            counter = 0;
+        }
+        showChar(alarmTimer.cHours[0],pos1);
+        showChar(alarmTimer.cHours[1],pos2);
+        showChar(alarmTimer.cMinutes[0],pos3);
+        showChar(alarmTimer.cMinutes[1],pos4);
+        showChar(alarmTimer.cSeconds[0],pos5);
+        showChar(alarmTimer.cSeconds[1],pos6);
+
         //Buttons SW1 and SW2 are active low (1 until pressed, then 0)
         if ((GPIO_getInputPinValue(GPIO_PORT_P2, GPIO_PIN5) == 1) & (magnetState == 0)) //Look for rising edge
         {
@@ -70,7 +102,6 @@ void main(void)
         //Start an ADC conversion (if it's not busy) in Single-Channel, Single Conversion Mode
         if (ADCState == 0)
         {
-            showHex((int)ADCResult); //Put the previous result on the LCD display
             if (ADCResult > 900) {
                 led_state = 1;
             }
@@ -98,6 +129,44 @@ void main(void)
      * __no_operation();
     */
 
+}
+
+int decrement_timer(timer *alarmTimer) {
+//    sprintf(alarmTimer->cSeconds, "%ld", alarmTimer->seconds);
+//    sprintf(alarmTimer->cMinutes, "%ld", alarmTimer->minutes);
+
+    alarmTimer->cSeconds[1]--;
+
+    if (alarmTimer->cSeconds[1] == '/') {
+        alarmTimer->cSeconds[1] = '9';
+        alarmTimer->cSeconds[0]--;
+    }
+    if (alarmTimer->cSeconds[0] == '/') {
+        alarmTimer->cSeconds[0] = '5';
+        alarmTimer->cMinutes[1]--;
+    }
+    if (alarmTimer->cMinutes[1] == '/') {
+        alarmTimer->cMinutes[1] = '9';
+        alarmTimer->cMinutes[0]--;
+    }
+    if (alarmTimer->cMinutes[0] == '/') {
+        alarmTimer->cMinutes[0] = '5';
+        alarmTimer->cHours[1]--;
+    }
+    if (alarmTimer->cHours[1] == '/') {
+        alarmTimer->cHours[1] = '9';
+        alarmTimer->cHours[0]--;
+    }
+    if (alarmTimer->cHours[0] == '/') {
+        alarmTimer->cHours[0] = '0';
+        alarmTimer->cHours[1] = '0';
+        alarmTimer->cMinutes[0] = '0';
+        alarmTimer->cMinutes[1] = '0';
+        alarmTimer->cSeconds[0] = '0';
+        alarmTimer->cSeconds[1] = '0';
+        return 0;
+    }
+    return 1;
 }
 
 void Init_GPIO(void)
