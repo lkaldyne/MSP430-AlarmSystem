@@ -7,6 +7,9 @@
  *
  */
 
+
+
+
 char ADCState = 0; //Busy state of the ADC
 int16_t ADCResult = 0; //Storage for the ADC conversion result
 typedef struct
@@ -61,6 +64,15 @@ void main(void)
     Init_UART();    //Sets up an echo over a COM port
     Init_LCD();     //Sets up the LaunchPad LCD display
 
+
+    // Initialize RTC
+    // Source = 32kHz crystal, divided by 1024
+    RTCCTL = RTCSS__XT1CLK | RTCSR | RTCPS__1024 | RTCIE;
+    // RTC count re-load compare value at 32.
+    // 1024/32768 * 32 = 1 sec.
+    RTCMOD = 32-1;
+
+
      /*
      * The MSP430 MCUs have a variety of low power modes. They can be almost
      * completely off and turn back on only when an interrupt occurs. You can
@@ -78,10 +90,10 @@ void main(void)
 
     while(1) //Do this when you want an infinite loop of code
     {
-        if (counter++ >= 550 && alarmActive) {
+        /*if (counter++ >= 550 && alarmActive) {
             alarmActive = decrement_timer(&alarmTimer);
             counter = 0;
-        }
+        }*/
         showChar(alarmTimer.cHours[0],pos1);
         showChar(alarmTimer.cHours[1],pos2);
         showChar(alarmTimer.cMinutes[0],pos3);
@@ -430,3 +442,28 @@ void ADC_ISR(void)
         ADCResult = ADC_getResults(ADC_BASE);
     }
 }
+
+// RTC interrupt service routine
+#pragma vector=RTC_VECTOR
+__interrupt void RTC_ISR(void)
+{
+    if(alarmActive){
+        decrement_timer(&alarmTimer);
+    }
+         /*if(RTCIV & RTCIV_RTCIF)    {                  // RTC Overflow
+            P1OUT ^= BIT0;
+            SEC++;
+            if(SEC==60) {
+                MINS++;
+                SEC=0;
+            }
+            if(MINS==60)    {
+                HRS++;
+                MINS=0;
+            }
+            if(HRS==24) {
+                HRS=0;
+            }
+         }*/
+}
+
