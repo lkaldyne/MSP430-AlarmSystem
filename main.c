@@ -358,7 +358,7 @@ void Init_PWM(void)
     param.dutyCycle             = HIGH_COUNT; //Defined in main.h
 
     //PWM_PORT PWM_PIN (defined in main.h) as PWM output
-    GPIO_setAsPeripheralModuleFunctionOutputPin(PWM_PORT, PWM_PIN, GPIO_PRIMARY_MODULE_FUNCTION);
+    GPIO_setAsPeripheralModuleFunctionOutputPin(BUZZER_PORT, BUZZER_PIN, GPIO_PRIMARY_MODULE_FUNCTION);
 }
 
 void Init_ADC(void)
@@ -370,7 +370,7 @@ void Init_ADC(void)
      */
 
     //Set ADC_IN to input direction
-    GPIO_setAsPeripheralModuleFunctionInputPin(ADC_IN_PORT, ADC_IN_PIN, GPIO_PRIMARY_MODULE_FUNCTION);
+    GPIO_setAsPeripheralModuleFunctionInputPin(MIC_IN_PORT, MIC_IN_PIN, GPIO_PRIMARY_MODULE_FUNCTION);
 
     //Initialize the ADC Module
     /*
@@ -403,7 +403,7 @@ void Init_ADC(void)
      * Use negative reference of AVss
      */
     ADC_configureMemory(ADC_BASE,
-                        ADC_IN_CHANNEL,
+                        MIC_IN_CHANNEL,
                         ADC_VREFPOS_AVCC,
                         ADC_VREFNEG_AVSS);
 
