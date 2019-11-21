@@ -120,6 +120,8 @@ void main(void)
 
     __bis_SR_register(GIE);     // Enter LPM3, enable interrupt
 
+    int anyArmed;
+
     while(1) //Do this when you want an infinite loop of code
     {
         /*if (counter++ >= 550 && alarmActive) {
@@ -134,6 +136,28 @@ void main(void)
         showChar(alarmTimer.cSeconds[1],pos6);
 
         int j;
+        // Disable all alarms
+        if (GPIO_getInputPinValue(SW1_PORT, SW1_PIN) == 0){
+            //showChar('A',pos1);
+            for (j = 0; j < 4; ++j) {
+                rooms[j].armed = 0;
+            }
+            Timer_A_stop(TIMER_A0_BASE);   //Turn off PWM
+            magnetState = 0;
+
+        }
+        // Reset armed alarms
+        if (GPIO_getInputPinValue(SW2_PORT, SW2_PIN) == 0){
+            //showChar('B',pos1);
+            for (j = 0; j < 4; ++j) {
+                if(rooms[j].armed == 2)
+                    rooms[j].armed = 1;
+            }
+            Timer_A_stop(TIMER_A0_BASE);   //Turn off PWM
+            magnetState = 0;
+        }
+
+
         for (j = 0; j < 4; ++j) {
             if (rooms[j].armed != 2) {
                 if (compare_times(alarmTimer, rooms[j].armTime)) {
@@ -149,7 +173,7 @@ void main(void)
                         GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN6);
                     else
                         GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN6);
-                    if (rooms[j].s0)
+                    if (rooms[j].s1)
                         GPIO_setOutputHighOnPin(GPIO_PORT_P5, GPIO_PIN0);
                     else
                         GPIO_setOutputLowOnPin(GPIO_PORT_P5, GPIO_PIN0);
