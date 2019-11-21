@@ -29,7 +29,7 @@ typedef struct
     int s0;
     int s1;
     int flash_delay;
-    int flash_switch
+    int flash_switch;
 
 
 } room;
@@ -57,12 +57,21 @@ void main(void)
 
     rooms[0].led_port = GPIO_PORT_P2;
     rooms[0].led_pin = GPIO_PIN5;
-    rooms[1].led_port = GPIO_PORT_P2
+    rooms[1].led_port = GPIO_PORT_P2;
     rooms[1].led_pin = GPIO_PIN7;
     rooms[2].led_port = GPIO_PORT_P1;
     rooms[2].led_pin = GPIO_PIN4;
     rooms[3].led_port = GPIO_PORT_P1;
     rooms[3].led_pin = GPIO_PIN5;
+
+    rooms[0].s0 = 0;
+    rooms[0].s1 = 1;
+    rooms[1].s0 = 1;
+    rooms[1].s1 = 0;
+    rooms[2].s0 = 0;
+    rooms[2].s1 = 0;
+    rooms[3].s0 = 1;
+    rooms[3].s1 = 1;
 
 
     /*
@@ -124,17 +133,18 @@ void main(void)
         showChar(alarmTimer.cSeconds[0],pos5);
         showChar(alarmTimer.cSeconds[1],pos6);
 
-        for (int j = 0; j < 4; ++j) {
+        int j;
+        for (j = 0; j < 4; ++j) {
             if (rooms[j].armed != 2) {
-                if compare_times(alarmTimer, rooms[j].armTime) {
+                if (compare_times(alarmTimer, rooms[j].armTime)) {
                     rooms[j].armed = 1;
 
                 }
-                if compare_times(alarmTimer, rooms[j].disarmTime) {
+                if (compare_times(alarmTimer, rooms[j].disarmTime)) {
                     rooms[j].armed = 0;
                 }
 
-                if (armed == 1) { //Read sensors if room is armed
+                if (rooms[j].armed == 1) { //Read sensors if room is armed
                     if (rooms[j].s0)
                         GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN6);
                     else
@@ -143,6 +153,8 @@ void main(void)
                         GPIO_setOutputHighOnPin(GPIO_PORT_P5, GPIO_PIN0);
                     else
                         GPIO_setOutputLowOnPin(GPIO_PORT_P5, GPIO_PIN0);
+
+                    __delay_cycles(100);
 
                     if ((GPIO_getInputPinValue(GPIO_PORT_P1, GPIO_PIN3) == 1)) //If reed switch is on for this room
                     {
@@ -154,6 +166,8 @@ void main(void)
                             if (ADCResult > 530) {
                                 rooms[j].armed = 2;
                             }
+                            ADCState = 1; //Set flag to indicate ADC is busy - ADC ISR (interrupt) will clear it
+                            ADC_startConversion(ADC_BASE, ADC_SINGLECHANNEL);
                         }
                     }
                 }
@@ -168,7 +182,7 @@ void main(void)
             }
 
             else if (rooms[j].armed == 2) {
-                if (rooms[j].flash_delay++ >= 500) {
+                if (rooms[j].flash_delay++ >= 150) {
                     if (rooms[j].flash_switch) {
                         GPIO_setOutputHighOnPin (rooms[j].led_port, rooms[j].led_pin);
                         rooms[j].flash_switch = 0;
@@ -185,11 +199,9 @@ void main(void)
                     magnetState = 1;
                 }
             }
-
-
-
-
         }
+    }
+}
 //        //Buttons SW1 and SW2 are active low (1 until pressed, then 0)
 //        if ((GPIO_getInputPinValue(GPIO_PORT_P1, GPIO_PIN3) == 1) & (magnetState == 0)) //Look for rising edge
 //        {
@@ -231,8 +243,6 @@ void main(void)
      * //For debugger to let it know that you meant for there to be no more code
      * __no_operation();
     */
-
-}
 
 int compare_times(timer timer1, timer timer2) {
     if (timer1.cHours[0] == timer2.cHours[0] &&
