@@ -84,12 +84,19 @@ void main(void)
 
     displayScrollText("GRP 11 DEMO");
 
+    // Initialize RTC
+    // Source = 32kHz crystal, divided by 1024
+    RTCCTL = RTCSS__XT1CLK | RTCSR | RTCPS__1024 | RTCIE;
+    RTCMOD = 32-1;
+
+    __bis_SR_register(GIE);     // Enter LPM3, enable interrupt
+
     while(1) //Do this when you want an infinite loop of code
     {
-        if (counter++ >= 550 && alarmActive) {
+        /*if (counter++ >= 550 && alarmActive) {
             alarmActive = decrement_timer(&alarmTimer);
             counter = 0;
-        }
+        }*/
         showChar(alarmTimer.cHours[0],pos1);
         showChar(alarmTimer.cHours[1],pos2);
         showChar(alarmTimer.cMinutes[0],pos3);
@@ -453,4 +460,13 @@ void ADC_ISR(void)
         ADCState = 0; //Not busy anymore
         ADCResult = ADC_getResults(ADC_BASE);
     }
+}
+
+// RTC interrupt service routine
+#pragma vector=RTC_VECTOR
+__interrupt void RTC_ISR(void)
+{
+         if(RTCIV & RTCIV_RTCIF)    {                  // RTC Overflow
+             decrement_timer(&alarmTimer);
+         }
 }
