@@ -7,9 +7,6 @@
  *
  */
 
-
-
-
 char ADCState = 0; //Busy state of the ADC
 int16_t ADCResult = 0; //Storage for the ADC conversion result
 typedef struct
@@ -64,15 +61,6 @@ void main(void)
     Init_UART();    //Sets up an echo over a COM port
     Init_LCD();     //Sets up the LaunchPad LCD display
 
-
-    // Initialize RTC
-    // Source = 32kHz crystal, divided by 1024
-    RTCCTL = RTCSS__XT1CLK | RTCSR | RTCPS__1024 | RTCIE;
-    // RTC count re-load compare value at 32.
-    // 1024/32768 * 32 = 1 sec.
-    RTCMOD = 32-1;
-
-
      /*
      * The MSP430 MCUs have a variety of low power modes. They can be almost
      * completely off and turn back on only when an interrupt occurs. You can
@@ -90,10 +78,10 @@ void main(void)
 
     while(1) //Do this when you want an infinite loop of code
     {
-        /*if (counter++ >= 550 && alarmActive) {
+        if (counter++ >= 550 && alarmActive) {
             alarmActive = decrement_timer(&alarmTimer);
             counter = 0;
-        }*/
+        }
         showChar(alarmTimer.cHours[0],pos1);
         showChar(alarmTimer.cHours[1],pos2);
         showChar(alarmTimer.cMinutes[0],pos3);
@@ -149,36 +137,35 @@ int decrement_timer(timer *alarmTimer) {
 //    sprintf(alarmTimer->cSeconds, "%ld", alarmTimer->seconds);
 //    sprintf(alarmTimer->cMinutes, "%ld", alarmTimer->minutes);
 
-    alarmTimer->cSeconds[1]--;
+    alarmTimer->cSeconds[1]++;
 
-    if (alarmTimer->cSeconds[1] == '/') {
-        alarmTimer->cSeconds[1] = '9';
-        alarmTimer->cSeconds[0]--;
+    if (alarmTimer->cSeconds[1] == ':') {
+        alarmTimer->cSeconds[1] = '0';
+        alarmTimer->cSeconds[0]++;
     }
-    if (alarmTimer->cSeconds[0] == '/') {
-        alarmTimer->cSeconds[0] = '5';
-        alarmTimer->cMinutes[1]--;
+    if (alarmTimer->cSeconds[0] == '6') {
+        alarmTimer->cSeconds[0] = '0';
+        alarmTimer->cMinutes[1]++;
     }
-    if (alarmTimer->cMinutes[1] == '/') {
-        alarmTimer->cMinutes[1] = '9';
-        alarmTimer->cMinutes[0]--;
+    if (alarmTimer->cMinutes[1] == ':') {
+        alarmTimer->cMinutes[1] = '0';
+        alarmTimer->cMinutes[0]++;
     }
-    if (alarmTimer->cMinutes[0] == '/') {
-        alarmTimer->cMinutes[0] = '5';
-        alarmTimer->cHours[1]--;
+    if (alarmTimer->cMinutes[0] == '6') {
+        alarmTimer->cMinutes[0] = '0';
+        alarmTimer->cHours[1]++;
     }
-    if (alarmTimer->cHours[1] == '/') {
-        alarmTimer->cHours[1] = '9';
-        alarmTimer->cHours[0]--;
+    if (alarmTimer->cHours[1] == ':') {
+        alarmTimer->cHours[1] = '0';
+        alarmTimer->cHours[0]++;
     }
-    if (alarmTimer->cHours[0] == '/') {
+    if (alarmTimer->cHours[0] == '2' && alarmTimer->cHours[1] == '4') {
         alarmTimer->cHours[0] = '0';
         alarmTimer->cHours[1] = '0';
         alarmTimer->cMinutes[0] = '0';
         alarmTimer->cMinutes[1] = '0';
         alarmTimer->cSeconds[0] = '0';
         alarmTimer->cSeconds[1] = '0';
-        return 0;
     }
     return 1;
 }
@@ -248,6 +235,9 @@ void Init_Clock(void)
     CS_initClockSignal(CS_MCLK, CS_DCOCLKDIV_SELECT, CS_CLOCK_DIVIDER_1);
 }
 
+unsigned int output = 0;
+
+
 /* UART Initialization */
 void Init_UART(void)
 {
@@ -295,6 +285,18 @@ void Init_UART(void)
 
     // Enable EUSCI_A0 RX interrupt
     EUSCI_A_UART_enableInterrupt(EUSCI_A0_BASE, EUSCI_A_UART_RECEIVE_INTERRUPT);
+
+    if(!output){
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'H');
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'l');
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'l');
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'o');
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\n');
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\r');
+        output = 1;
+    }
+
 }
 
 unsigned int timerCounter = 0;
@@ -310,6 +312,7 @@ void EUSCIA0_ISR(void)
 
     if (RxStatus)
     {
+
         /*alarmTimer.cHours[0] = '1';
         alarmTimer.cHours[1] = '1';
         alarmTimer.cMinutes[0] = '0';
@@ -318,6 +321,7 @@ void EUSCIA0_ISR(void)
         alarmTimer.cSeconds[1] = '0';*/
 
         uint8_t value = EUSCI_A_UART_receiveData(EUSCI_A0_BASE);
+
 
         if(((char)value >= '0' && (char)value <= '9') && timerCounter < 2){
             alarmTimer.cHours[timerCounter] = (char)value;
@@ -370,7 +374,7 @@ void Init_PWM(void)
     param.dutyCycle             = HIGH_COUNT; //Defined in main.h
 
     //PWM_PORT PWM_PIN (defined in main.h) as PWM output
-    GPIO_setAsPeripheralModuleFunctionOutputPin(BUZZER_PORT, BUZZER_PIN, GPIO_PRIMARY_MODULE_FUNCTION);
+    GPIO_setAsPeripheralModuleFunctionOutputPin(PWM_PORT, PWM_PIN, GPIO_PRIMARY_MODULE_FUNCTION);
 }
 
 void Init_ADC(void)
@@ -382,7 +386,7 @@ void Init_ADC(void)
      */
 
     //Set ADC_IN to input direction
-    GPIO_setAsPeripheralModuleFunctionInputPin(MIC_IN_PORT, MIC_IN_PIN, GPIO_PRIMARY_MODULE_FUNCTION);
+    GPIO_setAsPeripheralModuleFunctionInputPin(ADC_IN_PORT, ADC_IN_PIN, GPIO_PRIMARY_MODULE_FUNCTION);
 
     //Initialize the ADC Module
     /*
@@ -415,7 +419,7 @@ void Init_ADC(void)
      * Use negative reference of AVss
      */
     ADC_configureMemory(ADC_BASE,
-                        MIC_IN_CHANNEL,
+                        ADC_IN_CHANNEL,
                         ADC_VREFPOS_AVCC,
                         ADC_VREFNEG_AVSS);
 
@@ -442,28 +446,3 @@ void ADC_ISR(void)
         ADCResult = ADC_getResults(ADC_BASE);
     }
 }
-
-// RTC interrupt service routine
-#pragma vector=RTC_VECTOR
-__interrupt void RTC_ISR(void)
-{
-    if(alarmActive){
-        decrement_timer(&alarmTimer);
-    }
-         /*if(RTCIV & RTCIV_RTCIF)    {                  // RTC Overflow
-            P1OUT ^= BIT0;
-            SEC++;
-            if(SEC==60) {
-                MINS++;
-                SEC=0;
-            }
-            if(MINS==60)    {
-                HRS++;
-                MINS=0;
-            }
-            if(HRS==24) {
-                HRS=0;
-            }
-         }*/
-}
-
