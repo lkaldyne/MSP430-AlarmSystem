@@ -350,6 +350,8 @@ void Init_Clock(void)
 }
 
 unsigned int output = 0;
+unsigned int timerCounter = 0;
+
 
 
 /* UART Initialization */
@@ -401,11 +403,26 @@ void Init_UART(void)
     EUSCI_A_UART_enableInterrupt(EUSCI_A0_BASE, EUSCI_A_UART_RECEIVE_INTERRUPT);
 
     if(!output){
-        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'H');
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\n');
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\r');
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'E');
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'n');
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 't');
         EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
-        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'l');
-        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'l');
-        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'o');
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'r');
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'c');
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'u');
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'r');
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'r');
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'n');
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 't');
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 't');
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'i');
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'm');
+        EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
         EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\n');
         EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\r');
         output = 1;
@@ -413,7 +430,6 @@ void Init_UART(void)
 
 }
 
-unsigned int timerCounter = 0;
 
 /* EUSCI A0 UART ISR - Echoes data back to PC host */
 #pragma vector=USCI_A0_VECTOR
@@ -436,7 +452,7 @@ void EUSCIA0_ISR(void)
 
         uint8_t value = EUSCI_A_UART_receiveData(EUSCI_A0_BASE);
 
-
+        // Arm zone 1
         if(((char)value >= '0' && (char)value <= '9') && timerCounter < 2){
             alarmTimer.cHours[timerCounter] = (char)value;
             timerCounter++;
@@ -461,10 +477,456 @@ void EUSCIA0_ISR(void)
             timerCounter++;
         }
 
-        if(timerCounter == 9)
-            alarmActive = 1;
+        // Arm zone 1
+        if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 8 && timerCounter < 11)){
+            rooms[0].armTime.cHours[timerCounter-9] = (char)value;
+            timerCounter++;
+        }
+        if((char)value == 'h' && timerCounter == 11){
+            timerCounter++;
+        }
+
+        if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 11 && timerCounter < 14)){
+            rooms[0].armTime.cMinutes[timerCounter-12] = (char)value;
+            timerCounter++;
+        }
+        if((char)value == 'm' && timerCounter == 14){
+            timerCounter++;
+        }
+
+        if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 14 && timerCounter < 17)){
+            rooms[0].armTime.cSeconds[timerCounter-15] = (char)value;
+            timerCounter++;
+        }
+        if((char)value == 's' && timerCounter == 17){
+            timerCounter++;
+        }
+
+        // Disarm zone 1
+        if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 17 && timerCounter < 20)){
+            rooms[0].disarmTime.cHours[timerCounter-18] = (char)value;
+            timerCounter++;
+        }
+        if((char)value == 'h' && timerCounter == 20){
+            timerCounter++;
+        }
+
+        if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 20 && timerCounter < 23)){
+            rooms[0].disarmTime.cMinutes[timerCounter-21] = (char)value;
+            timerCounter++;
+        }
+        if((char)value == 'm' && timerCounter == 23){
+            timerCounter++;
+        }
+
+        if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 23 && timerCounter < 26)){
+            rooms[0].disarmTime.cSeconds[timerCounter-24] = (char)value;
+            timerCounter++;
+        }
+        if((char)value == 's' && timerCounter == 26){
+            timerCounter++;
+        }
+        // Arm zone 2
+        if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 26 && timerCounter < 29)){
+            rooms[1].armTime.cHours[timerCounter-27] = (char)value;
+            timerCounter++;
+        }
+        if((char)value == 'h' && timerCounter == 29){
+            timerCounter++;
+        }
+
+        if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 29 && timerCounter < 32)){
+            rooms[1].armTime.cMinutes[timerCounter-30] = (char)value;
+            timerCounter++;
+        }
+        if((char)value == 'm' && timerCounter == 32){
+            timerCounter++;
+        }
+
+        if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 32 && timerCounter < 35)){
+            rooms[1].armTime.cSeconds[timerCounter-33] = (char)value;
+            timerCounter++;
+        }
+        if((char)value == 's' && timerCounter == 35){
+            timerCounter++;
+        }
+
+        // Disarm zone 2
+        if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 35 && timerCounter < 38)){
+               rooms[1].disarmTime.cHours[timerCounter-36] = (char)value;
+               timerCounter++;
+           }
+           if((char)value == 'h' && timerCounter == 38){
+               timerCounter++;
+           }
+
+           if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 38 && timerCounter < 41)){
+               rooms[1].disarmTime.cMinutes[timerCounter-39] = (char)value;
+               timerCounter++;
+           }
+           if((char)value == 'm' && timerCounter == 41){
+               timerCounter++;
+           }
+
+           if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 41 && timerCounter < 44)){
+               rooms[1].disarmTime.cSeconds[timerCounter-42] = (char)value;
+               timerCounter++;
+           }
+           if((char)value == 's' && timerCounter == 44){
+               timerCounter++;
+           }
+          // Arm zone 3
+          if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 44 && timerCounter < 47)){
+              rooms[2].armTime.cHours[timerCounter-45] = (char)value;
+              timerCounter++;
+          }
+          if((char)value == 'h' && timerCounter == 47){
+              timerCounter++;
+          }
+
+          if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 47 && timerCounter < 50)){
+              rooms[2].armTime.cMinutes[timerCounter-48] = (char)value;
+              timerCounter++;
+          }
+          if((char)value == 'm' && timerCounter == 50){
+              timerCounter++;
+          }
+
+          if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 50 && timerCounter < 53)){
+              rooms[2].armTime.cSeconds[timerCounter-51] = (char)value;
+              timerCounter++;
+          }
+          if((char)value == 's' && timerCounter == 53){
+              timerCounter++;
+          }
+          // Disarm zone 3
+          if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 53 && timerCounter < 56)){
+             rooms[2].disarmTime.cHours[timerCounter-54] = (char)value;
+             timerCounter++;
+          }
+          if((char)value == 'h' && timerCounter == 56){
+              timerCounter++;
+          }
+
+          if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 56 && timerCounter < 59)){
+              rooms[2].disarmTime.cMinutes[timerCounter-57] = (char)value;
+              timerCounter++;
+          }
+          if((char)value == 'm' && timerCounter == 59){
+              timerCounter++;
+          }
+
+          if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 59 && timerCounter < 62)){
+              rooms[2].disarmTime.cSeconds[timerCounter-60] = (char)value;
+              timerCounter++;
+          }
+          if((char)value == 's' && timerCounter == 62){
+              timerCounter++;
+          }
+          // Arm zone 4
+          if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 62 && timerCounter < 65)){
+              rooms[3].armTime.cHours[timerCounter-63] = (char)value;
+              timerCounter++;
+          }
+          if((char)value == 'h' && timerCounter == 65){
+              timerCounter++;
+          }
+
+          if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 65 && timerCounter < 68)){
+              rooms[3].armTime.cMinutes[timerCounter-66] = (char)value;
+              timerCounter++;
+          }
+          if((char)value == 'm' && timerCounter == 68){
+              timerCounter++;
+          }
+
+          if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 68 && timerCounter < 71)){
+              rooms[3].armTime.cSeconds[timerCounter-69] = (char)value;
+              timerCounter++;
+          }
+          if((char)value == 's' && timerCounter == 71){
+              timerCounter++;
+          }
+          // Disarm zone 4
+          if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 71 && timerCounter < 74)){
+              rooms[3].disarmTime.cHours[timerCounter-72] = (char)value;
+              timerCounter++;
+          }
+          if((char)value == 'h' && timerCounter == 74){
+              timerCounter++;
+          }
+
+          if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 74 && timerCounter < 77)){
+              rooms[3].disarmTime.cMinutes[timerCounter-75] = (char)value;
+              timerCounter++;
+          }
+          if((char)value == 'm' && timerCounter == 77){
+              timerCounter++;
+          }
+
+          if(((char)value >= '0' && (char)value <= '9') && (timerCounter > 77 && timerCounter < 80)){
+              rooms[3].disarmTime.cSeconds[timerCounter-78] = (char)value;
+              timerCounter++;
+          }
+          if((char)value == 's' && timerCounter == 80){
+              timerCounter++;
+              alarmActive = 1;
+          }
+
+
 
         EUSCI_A_UART_transmitData(EUSCI_A0_BASE, value);
+
+
+
+        if((char)value == 's' && timerCounter == 9){
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\r');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'E');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 't');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'r');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'a');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'r');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'm');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 't');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'i');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'm');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'z');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'o');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '1');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\r');
+        }
+        if((char)value == 's' && timerCounter == 18){
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\r');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'E');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 't');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'r');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'd');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'i');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 's');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'a');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'r');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'm');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 't');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'i');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'm');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'z');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'o');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '1');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\r');
+        }
+        if((char)value == 's' && timerCounter == 27){
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\r');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'E');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 't');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'r');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'a');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'r');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'm');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 't');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'i');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'm');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'z');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'o');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '2');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\r');
+        }
+        if((char)value == 's' && timerCounter == 36){
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\r');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'E');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 't');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'r');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'd');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'i');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 's');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'a');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'r');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'm');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 't');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'i');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'm');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'z');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'o');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '2');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\r');
+        }
+        if((char)value == 's' && timerCounter == 45){
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\r');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'E');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 't');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'r');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'a');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'r');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'm');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 't');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'i');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'm');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'z');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'o');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '3');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\r');
+        }
+        if((char)value == 's' && timerCounter == 54){
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\r');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'E');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 't');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'r');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'd');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'i');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 's');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'a');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'r');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'm');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 't');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'i');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'm');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'z');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'o');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '3');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\r');
+        }
+        if((char)value == 's' && timerCounter == 63){
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\r');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'E');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 't');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'r');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'a');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'r');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'm');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 't');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'i');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'm');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'z');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'o');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '4');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\r');
+        }
+        if((char)value == 's' && timerCounter == 72){
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\r');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'E');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 't');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'r');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'd');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'i');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 's');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'a');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'r');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'm');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 't');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'i');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'm');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'z');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'o');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '4');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\r');
+        }
+        if((char)value == 's' && timerCounter == 81){
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\r');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'S');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 't');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'u');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'p');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, ' ');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'c');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'o');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'm');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'p');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'l');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 't');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, 'e');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\n');
+            EUSCI_A_UART_transmitData(EUSCI_A0_BASE, '\r');
+        }
     }
 }
 
@@ -566,6 +1028,7 @@ void ADC_ISR(void)
 __interrupt void RTC_ISR(void)
 {
          if(RTCIV & RTCIV_RTCIF)    {                  // RTC Overflow
-             decrement_timer(&alarmTimer);
+             if(alarmActive)
+                 decrement_timer(&alarmTimer);
          }
 }
