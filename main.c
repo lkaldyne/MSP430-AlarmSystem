@@ -23,6 +23,15 @@ typedef struct
 {
     timer armTime;
     timer disarmTime;
+    int armed;
+    int led_port;
+    int led_pin;
+    int s0;
+    int s1;
+    int flash_delay;
+    int flash_switch
+
+
 } room;
 
 timer alarmTimer;
@@ -32,6 +41,7 @@ room rooms[4];
 int alarmActive = 0;
 
 int decrement_timer(timer *alarmTimer);
+int compare_times(timer timer1, timer timer2);
 
 void main(void)
 {
@@ -44,6 +54,16 @@ void main(void)
     alarmTimer.cSeconds[0] = '0';
     alarmTimer.cSeconds[1] = '0';*/
     int counter = 0;
+
+    rooms[0].led_port = GPIO_PORT_P2;
+    rooms[0].led_pin = GPIO_PIN5;
+    rooms[1].led_port = GPIO_PORT_P2
+    rooms[1].led_pin = GPIO_PIN7;
+    rooms[2].led_port = GPIO_PORT_P1;
+    rooms[2].led_pin = GPIO_PIN4;
+    rooms[3].led_port = GPIO_PORT_P1;
+    rooms[3].led_pin = GPIO_PIN5;
+
 
     /*
      * Functions with two underscores in front are called compiler intrinsics.
@@ -104,37 +124,103 @@ void main(void)
         showChar(alarmTimer.cSeconds[0],pos5);
         showChar(alarmTimer.cSeconds[1],pos6);
 
-        //Buttons SW1 and SW2 are active low (1 until pressed, then 0)
-        if ((GPIO_getInputPinValue(GPIO_PORT_P2, GPIO_PIN5) == 1) & (magnetState == 0)) //Look for rising edge
-        {
-            Timer_A_outputPWM(TIMER_A0_BASE, &param);   //Turn on PWM
-            magnetState = 1;                //Capture new button state
-        }
-        if ((GPIO_getInputPinValue(GPIO_PORT_P2, GPIO_PIN5) == 0) & (magnetState == 1)) //Look for falling edge
-        {
-            Timer_A_stop(TIMER_A0_BASE);                //Shut off PWM signal
-            magnetState = 0;                            //Capture new button state
-        }
+        for (int j = 0; j < 4; ++j) {
+            if (rooms[j].armed != 2) {
+                if compare_times(alarmTimer, rooms[j].armTime) {
+                    rooms[j].armed = 1;
 
-        //Start an ADC conversion (if it's not busy) in Single-Channel, Single Conversion Mode
-        if (ADCState == 0)
-        {
-            if (ADCResult > 900) {
-                led_state = 1;
+                }
+                if compare_times(alarmTimer, rooms[j].disarmTime) {
+                    rooms[j].armed = 0;
+                }
+
+                if (armed == 1) { //Read sensors if room is armed
+                    if (rooms[j].s0)
+                        GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN6);
+                    else
+                        GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN6);
+                    if (rooms[j].s0)
+                        GPIO_setOutputHighOnPin(GPIO_PORT_P5, GPIO_PIN0);
+                    else
+                        GPIO_setOutputLowOnPin(GPIO_PORT_P5, GPIO_PIN0);
+
+                    if ((GPIO_getInputPinValue(GPIO_PORT_P1, GPIO_PIN3) == 1)) //If reed switch is on for this room
+                    {
+                        rooms[j].armed = 2;
+                    }
+
+                    if (j == 0) { //dealing with mic input from room 0
+                        if (ADCState == 0) {
+                            if (ADCResult > 530) {
+                                rooms[j].armed = 2;
+                            }
+                        }
+                    }
+                }
             }
-            else {
-                led_state = 0;
+
+            if (rooms[j].armed == 0) {
+                GPIO_setOutputLowOnPin (rooms[j].led_port, rooms[j].led_pin);
             }
-            ADCState = 1; //Set flag to indicate ADC is busy - ADC ISR (interrupt) will clear it
-            ADC_startConversion(ADC_BASE, ADC_SINGLECHANNEL);
+
+            else if (rooms[j].armed == 1) {
+                GPIO_setOutputHighOnPin (rooms[j].led_port, rooms[j].led_pin);
+            }
+
+            else if (rooms[j].armed == 2) {
+                if (rooms[j].flash_delay++ >= 500) {
+                    if (rooms[j].flash_switch) {
+                        GPIO_setOutputHighOnPin (rooms[j].led_port, rooms[j].led_pin);
+                        rooms[j].flash_switch = 0;
+                    }
+
+                    else {
+                        GPIO_setOutputLowOnPin (rooms[j].led_port, rooms[j].led_pin);
+                        rooms[j].flash_switch = 1;
+                    }
+                    rooms[j].flash_delay = 0;
+                }
+                if (magnetState == 0) {
+                    Timer_A_outputPWM(TIMER_A0_BASE, &param);   //Turn on PWM
+                    magnetState = 1;
+                }
+            }
+
+
+
+
         }
-        if (led_state) {
-            GPIO_setOutputHighOnPin (GPIO_PORT_P2, GPIO_PIN7);
-        }
-        else {
-            GPIO_setOutputLowOnPin (GPIO_PORT_P2, GPIO_PIN7);
-        }
-    }
+//        //Buttons SW1 and SW2 are active low (1 until pressed, then 0)
+//        if ((GPIO_getInputPinValue(GPIO_PORT_P1, GPIO_PIN3) == 1) & (magnetState == 0)) //Look for rising edge
+//        {
+//            Timer_A_outputPWM(TIMER_A0_BASE, &param);   //Turn on PWM
+//            magnetState = 1;                //Capture new button state
+//        }
+//        if ((GPIO_getInputPinValue(GPIO_PORT_P1, GPIO_PIN3) == 0) & (magnetState == 1)) //Look for falling edge
+//        {
+//            Timer_A_stop(TIMER_A0_BASE);                //Shut off PWM signal
+//            magnetState = 0;                            //Capture new button state
+//        }
+//
+//        //Start an ADC conversion (if it's not busy) in Single-Channel, Single Conversion Mode
+//        if (ADCState == 0)
+//        {
+//            if (ADCResult > 900) {
+//                led_state = 1;
+//            }
+//            else {
+//                led_state = 0;
+//            }
+//            ADCState = 1; //Set flag to indicate ADC is busy - ADC ISR (interrupt) will clear it
+//            ADC_startConversion(ADC_BASE, ADC_SINGLECHANNEL);
+//        }
+//        if (led_state) {
+//            GPIO_setOutputHighOnPin (GPIO_PORT_P2, GPIO_PIN7);
+//        }
+//        else {
+//            GPIO_setOutputLowOnPin (GPIO_PORT_P2, GPIO_PIN7);
+//        }
+//    }
 
     /*
      * You can use the following code if you plan on only using interrupts
@@ -146,6 +232,18 @@ void main(void)
      * __no_operation();
     */
 
+}
+
+int compare_times(timer timer1, timer timer2) {
+    if (timer1.cHours[0] == timer2.cHours[0] &&
+            timer1.cHours[1] == timer2.cHours[1] &&
+            timer1.cMinutes[0] == timer2.cMinutes[0] &&
+            timer1.cMinutes[1] == timer2.cMinutes[1] &&
+            timer1.cSeconds[1] == timer2.cSeconds[1] &&
+            timer1.cSeconds[0] == timer2.cSeconds[0])
+        return 1;
+    else
+        return 0;
 }
 
 int decrement_timer(timer *alarmTimer) {
@@ -188,7 +286,7 @@ int decrement_timer(timer *alarmTimer) {
 void Init_GPIO(void)
 {
     // Set all GPIO pins to output low to prevent floating input and reduce power consumption
-    GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0|GPIO_PIN1|GPIO_PIN2|GPIO_PIN3|GPIO_PIN4|GPIO_PIN5|GPIO_PIN6|GPIO_PIN7);
+    GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0|GPIO_PIN1|GPIO_PIN2|GPIO_PIN4|GPIO_PIN5|GPIO_PIN6|GPIO_PIN7);
     GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN0|GPIO_PIN1|GPIO_PIN2|GPIO_PIN3|GPIO_PIN4|GPIO_PIN5|GPIO_PIN6|GPIO_PIN7);
     GPIO_setOutputLowOnPin(GPIO_PORT_P3, GPIO_PIN0|GPIO_PIN1|GPIO_PIN2|GPIO_PIN3|GPIO_PIN4|GPIO_PIN5|GPIO_PIN6|GPIO_PIN7);
     GPIO_setOutputLowOnPin(GPIO_PORT_P4, GPIO_PIN0|GPIO_PIN1|GPIO_PIN2|GPIO_PIN3|GPIO_PIN4|GPIO_PIN5|GPIO_PIN6|GPIO_PIN7);
@@ -197,7 +295,7 @@ void Init_GPIO(void)
     GPIO_setOutputLowOnPin(GPIO_PORT_P7, GPIO_PIN0|GPIO_PIN1|GPIO_PIN2|GPIO_PIN3|GPIO_PIN4|GPIO_PIN5|GPIO_PIN6|GPIO_PIN7);
     GPIO_setOutputLowOnPin(GPIO_PORT_P8, GPIO_PIN0|GPIO_PIN1|GPIO_PIN2|GPIO_PIN3|GPIO_PIN4|GPIO_PIN5|GPIO_PIN6|GPIO_PIN7);
 
-    GPIO_setAsOutputPin(GPIO_PORT_P1, GPIO_PIN0|GPIO_PIN1|GPIO_PIN2|GPIO_PIN3|GPIO_PIN4|GPIO_PIN5|GPIO_PIN6|GPIO_PIN7);
+    GPIO_setAsOutputPin(GPIO_PORT_P1, GPIO_PIN0|GPIO_PIN1|GPIO_PIN2|GPIO_PIN4|GPIO_PIN5|GPIO_PIN6|GPIO_PIN7);
     GPIO_setAsOutputPin(GPIO_PORT_P2, GPIO_PIN0|GPIO_PIN1|GPIO_PIN2|GPIO_PIN3|GPIO_PIN4|GPIO_PIN5|GPIO_PIN6|GPIO_PIN7);
     GPIO_setAsOutputPin(GPIO_PORT_P3, GPIO_PIN0|GPIO_PIN1|GPIO_PIN2|GPIO_PIN3|GPIO_PIN4|GPIO_PIN5|GPIO_PIN6|GPIO_PIN7);
     GPIO_setAsOutputPin(GPIO_PORT_P4, GPIO_PIN0|GPIO_PIN1|GPIO_PIN2|GPIO_PIN3|GPIO_PIN4|GPIO_PIN5|GPIO_PIN6|GPIO_PIN7);
@@ -210,6 +308,7 @@ void Init_GPIO(void)
     GPIO_setAsInputPinWithPullUpResistor(SW1_PORT, SW1_PIN);
     GPIO_setAsInputPinWithPullUpResistor(SW2_PORT, SW2_PIN);
     //GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P2, GPIO_PIN5);
+    GPIO_setAsInputPin(GPIO_PORT_P1, GPIO_PIN3);
 
     //Set LED1 and LED2 as outputs
     //GPIO_setAsOutputPin(LED1_PORT, LED1_PIN); //Comment if using UART
